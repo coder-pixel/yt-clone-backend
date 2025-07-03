@@ -1,0 +1,17 @@
+{
+  "name": "yt-clone-backend",
+  "version": "1.0.0",
+  "description": "A yt backend to learn express",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "javascript",
+    "express.js",
+    "node.js",
+    "youtube"
+  ],
+  "author": "Sauvik Goel",
+  "license": "ISC"
+}
