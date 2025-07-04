@@ -1,4 +1,4 @@
-export const asyncHandler = (func) => async (req, res, next) => {
+const asyncHandler = (func) => async (req, res, next) => {
   try {
     await func(req, res, next);
   } catch (err) {
@@ -9,3 +9,5 @@ export const asyncHandler = (func) => async (req, res, next) => {
     });
   }
 };
+
+export default asyncHandler;
