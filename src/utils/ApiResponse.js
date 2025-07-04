@@ -1,3 +1,4 @@
+// ApiResponse is a class that is used to send a response to the client, will use it everytime we send a response to the client
 export class ApiResponse {
   constructor(statusCode, data, message = "Success") {
     this.statusCode = statusCode; // status code is used to set the status code of the response
