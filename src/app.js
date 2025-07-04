@@ -31,8 +31,12 @@ app.use(cookieParser());
 
 // routes import
 import userRouter from "./routes/user.routes.js";
+import { errorHandler } from "./middlewares/error.middleware.js";
 
 // routes middleware
 app.use("/api/v1/users", userRouter);
+
+// error middleware
+app.use(errorHandler); // need to be the last middleware to catch all the errors
 
 export default app;
