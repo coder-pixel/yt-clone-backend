@@ -8,6 +8,10 @@ export class ApiResponse {
   }
 
   send(res) {
-    res.status(this.statusCode).json({});
+    res.status(this.statusCode).json({
+      success: this.success,
+      message: this.message,
+      data: this.data,
+    });
   }
 }
