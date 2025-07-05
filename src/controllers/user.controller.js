@@ -423,3 +423,89 @@ export const getUserChannleProfile = asyncHandler(async (req, res) => {
       )
     );
 });
+
+export const getWatchHistory = asyncHandler(async (req, res) => {
+  const user = await User.aggregate([
+    // stage 1: match the user
+    {
+      $match: {
+        //  id is the id of the user, whose watch history we are fetching
+        _id: new mongoose.Types.ObjectId(req?.user?._id), // doing this because we are using the req?.user?._id in the frontend, and it is a string, so we need to convert it to a mongoose object id
+      },
+    },
+    // stage 2: lookup the videos, converting the watchHistory array to the video documents
+    {
+      $lookup: {
+        from: "videos",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        // creating aother nested pipeline to fetch the owner details of the video
+        pipeline: [
+          {
+            $lookup: {
+              from: "users",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              // creating another nested pipeline to selectively pick the fields
+              pipeline: [
+                {
+                  $project: {
+                    _id: 1,
+                    fullName: 1,
+                    username: 1,
+                    avatar: 1,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $arrayElemAt: ["$watchHistory.owner", 0],
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        user?.[0]?.watchHistory,
+        "Watch history fetched successfully"
+      )
+    );
+});
+
+/* 
+This MongoDB aggregation pipeline efficiently retrieves a user's watched video history, including details about each video's owner.
+
+How the Aggregation Works:
+Find the User ($match): The pipeline first uses $match to locate a specific user document by its _id.
+It's crucial to convert the _id from a string (often from frontend requests) to a proper mongoose.Types.ObjectId for a correct match.
+
+Populate Watch History and Video Owner Details ($lookup with Nested Pipeline):
+
+Videos Lookup: It then employs a $lookup stage to join the user's watchHistory (which is an array of video IDs) with the videos collection. 
+This replaces the video IDs with the actual video documents. The as: "watchHistory" overwrites the original array, embedding the full video details.
+
+Nested Video Pipeline: Inside this $lookup, there's a nested pipeline that runs for each video document:
+
+Owner Lookup: Another $lookup is performed to find the owner (user) of the video, based on the video's owner field.
+
+Project Owner Fields: A nested $project stage within the owner lookup ensures that only essential fields (_id, fullName, username, avatar) are retrieved for the owner, reducing data transfer.
+
+Format Owner Field: An $addFields stage then reshapes the owner field on the video document. Because $lookup always returns an array, this stage extracts the single owner object from that array, 
+making it easier to access owner details directly (e.g., video.owner.username instead of video.owner[0].username).
+
+What You Get:
+The final output is the specific user's document. Crucially, their watchHistory field is transformed from a simple array of video IDs into an array of rich video objects. 
+Each of these video objects also contains a fully populated owner object, giving you direct access to the video creator's essential details—all achieved in a single, optimized database query.
+*/
