@@ -344,3 +344,82 @@ export const updateUserCoverImage = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, user, "Cover image updated successfully"));
 });
+
+export const getUserChannleProfile = asyncHandler(async (req, res) => {
+  const { username } = req?.params;
+
+  if (!username?.trim()) {
+    throw new ApiError(400, "Username is required");
+  }
+
+  const channleDetails = await User.aggregate([
+    // stage 1: match the username
+    {
+      $match: {
+        username: username?.toLowerCase(),
+      },
+    },
+    // stage 2: lookup for the channel details
+    {
+      $lookup: {
+        from: "subscriptions", // from the subscriptions collection
+        localField: "_id", // local field is the _id of the user stored in the users collection
+        foreignField: "channel", // foreign field is the channel id stored in the subscriptions collection
+        as: "subscribers", // as is the name of the new field that will be added to the user document
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions", // from the subscriptions collection
+        localField: "_id", // local field is the _id of the user stored in the users collection
+        foreignField: "subscriber", // foreign field is the subscriber id stored in the subscriptions collection
+        as: "subscribedTo", // means the channel that the user is subscribed to
+      },
+    },
+    // stage 3: add fields to the user document
+    {
+      $addFields: {
+        subscribersCount: { $size: "$subscribers" }, // $size -> returns the count of the subscribers array
+        subscribedToCount: { $size: "$subscribedTo" }, // $size -> returns the count of the subscribedTo array
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req?.user?._id, "$subscribers.subscriber"] }, // if the user is in the subscribers array, then return true, else return false
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    // stage 4: add the channel details to the response
+    {
+      $project: {
+        _id: 1,
+        fullname: 1,
+        username: 1,
+        avatar: 1,
+        coverImage: 1,
+        subscribersCount: 1,
+        subscribedToCount: 1,
+        isSubscribed: 1,
+        createdAt: 1,
+        updatedAt: 1,
+      },
+    },
+  ]);
+
+  console.log({ channleDetails });
+
+  if (!channleDetails?.[0]) {
+    throw new ApiError(404, "Channel not found");
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        channleDetails?.[0],
+        "Channel details fetched successfully"
+      )
+    );
+});
