@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { cookieOptions } from "../config/index.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/APIError.js";
@@ -172,8 +173,8 @@ export const logoutUser = asyncHandler(async (req, res) => {
   await User.findByIdAndUpdate(
     req?.user?._id,
     {
-      $set: {
-        refreshToken: null,
+      $unset: {
+        refreshToken: 1, // 1 means remove the field from the document - better than $set
       },
     },
     {
