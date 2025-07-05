@@ -1,3 +1,4 @@
+import { cookieOptions } from "../config/index.js";
 import { User } from "../models/user.model.js";
 import { ApiError } from "../utils/APIError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -106,7 +107,6 @@ export const registerUser = asyncHandler(async (req, res) => {
 });
 
 export const loginUser = asyncHandler(async (req, res) => {
-  console.log({ req });
   // 1. get the user details from the request body
   // 2. check for required fields, if not throw an error
   // 3. check if user exists, if not throw an error
@@ -139,7 +139,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   }
 
   // 4. check for the password, if not throw an error
-  const isPasswordCorrect = await user.comparePassword(password); // user -> it is the instance of the User model, that we find above, can't find this method in the User model as custom made methods are to be used from the instances
+  const isPasswordCorrect = await user.isPasswordCorrect(password); // user -> it is the instance of the User model, that we find above, can't find this method in the User model as custom made methods are to be used from the instances
   if (!isPasswordCorrect) {
     throw new ApiError(400, "Invalid password");
   }
@@ -160,22 +160,68 @@ export const loginUser = asyncHandler(async (req, res) => {
   };
 
   // cookie options
-  const options = {
-    httpOnly: true,
-    secure: true,
-  };
 
   res
     .status(200)
-    .cookie("accessToken", accessToken, options)
-    .cookie("refreshToken", refreshToken, options)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
     .json(new ApiResponse(200, loggedInUser, "User logged in successfully"));
 });
 
 export const logoutUser = asyncHandler(async (req, res) => {
-  // 1. get the user details from the request body
-  // 2. check for required fields, if not throw an error
-  // 3. check if user exists, if not throw an error
-  // 4. check for the password, if not throw an error
-  // 5. if everything is fine, then generate the access token and refresh token
+  await User.findByIdAndUpdate(
+    req?.user?._id,
+    {
+      $set: {
+        refreshToken: null,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", cookieOptions) // clearing the access token from the cookie, need to pass the cookie options
+    .clearCookie("refreshToken", cookieOptions) // clearing the refresh token from the cookie, need to pass the cookie options
+    .json(new ApiResponse(200, null, "User logged out successfully"));
+});
+
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+  // 1. get the refresh token from the cookie
+  const incomingRefreshToken =
+    req?.cookies?.refreshToken || req?.body?.refreshToken; // req?.body?.refreshToken is for the case when the refresh token is sent in the body, eg: mobile apps
+
+  if (!incomingRefreshToken) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  // 2. verify the refresh token
+  const decoded = jwt.verify(
+    incomingRefreshToken,
+    process.env.REFRESH_TOKEN_SECRET
+  );
+
+  // 3. check if the user exists
+  const user = await User.findById(decoded?.id);
+  if (!user) {
+    throw new ApiError(401, "Unauthorized");
+  }
+
+  // 4. check if the refresh token is valid
+  if (user?.refreshToken !== incomingRefreshToken) {
+    throw new ApiError(401, "refresh token is expired or used");
+  }
+
+  // 5. generate the new access token
+  const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+    await _generateAccessAndRefreshTokens(user?._id);
+
+  // 6. send the new access token in the cookie
+  return res
+    .status(200)
+    .cookie("accessToken", newAccessToken, cookieOptions)
+    .cookie("refreshToken", newRefreshToken, cookieOptions)
+    .json(new ApiResponse(200, null, "Access token refreshed successfully"));
 });
