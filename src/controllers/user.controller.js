@@ -4,6 +4,28 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
+const _generateAccessAndRefreshTokens = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(404, "User not found");
+    }
+
+    const accessToken = user.generateAccessToken();
+    const refreshToken = user.generateRefreshToken();
+
+    user.refreshToken = refreshToken; // saving the refresh token to the user object
+    await user.save({ validateBeforeSave: false }); // saving the refresh token to the database, validateBeforeSave is false because we don't want to validate the user before saving the refresh token
+
+    return { accessToken, refreshToken };
+  } catch (err) {
+    throw new ApiError(
+      500,
+      "Something went wrong while generating access and refresh tokens"
+    );
+  }
+};
+
 export const registerUser = asyncHandler(async (req, res) => {
   //   1. get user details from the request body
   //   2. check for the required fields
@@ -81,4 +103,79 @@ export const registerUser = asyncHandler(async (req, res) => {
     "User registered successfully"
   );
   response.send(res);
+});
+
+export const loginUser = asyncHandler(async (req, res) => {
+  console.log({ req });
+  // 1. get the user details from the request body
+  // 2. check for required fields, if not throw an error
+  // 3. check if user exists, if not throw an error
+  // 4. check for the password, if not throw an error
+  // 5. if everything is fine, then generate the access token and refresh token
+  // 6. send tokenin cookie and return the response
+
+  if (!req.body) {
+    throw new ApiError(400, "Request body is required");
+  }
+
+  // 1. get the user details from the body
+  const { email, username, password } = req?.body;
+
+  // 2. check for required fields, if not throw an error
+  if (!email && !username) {
+    throw new ApiError(400, "Email or username is required");
+  }
+  if (!password) {
+    throw new ApiError(400, "Password is required");
+  }
+
+  // 3. check if user exists, if not throw an error
+  const user = await User.findOne({
+    $or: [{ email }, { username }],
+  });
+
+  if (!user) {
+    throw new ApiError(404, "User not found with this email or username");
+  }
+
+  // 4. check for the password, if not throw an error
+  const isPasswordCorrect = await user.comparePassword(password); // user -> it is the instance of the User model, that we find above, can't find this method in the User model as custom made methods are to be used from the instances
+  if (!isPasswordCorrect) {
+    throw new ApiError(400, "Invalid password");
+  }
+
+  // 5. if everything is fine, then generate the access token and refresh token
+  const { accessToken, refreshToken } = await _generateAccessAndRefreshTokens(
+    user?._id
+  );
+
+  // 6. send token in cookie and return the response
+  const loggedInUser = {
+    _id: user?._id,
+    fullName: user?.fullName || "",
+    username: user?.username || "",
+    email: user?.email || "",
+    avatar: user?.avatar || "",
+    coverImage: user?.coverImage || "",
+  };
+
+  // cookie options
+  const options = {
+    httpOnly: true,
+    secure: true,
+  };
+
+  res
+    .status(200)
+    .cookie("accessToken", accessToken, options)
+    .cookie("refreshToken", refreshToken, options)
+    .json(new ApiResponse(200, loggedInUser, "User logged in successfully"));
+});
+
+export const logoutUser = asyncHandler(async (req, res) => {
+  // 1. get the user details from the request body
+  // 2. check for required fields, if not throw an error
+  // 3. check if user exists, if not throw an error
+  // 4. check for the password, if not throw an error
+  // 5. if everything is fine, then generate the access token and refresh token
 });
