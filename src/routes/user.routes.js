@@ -59,7 +59,7 @@ router.patch(
   updateUserCoverImage
 ); // update cover image route
 
-router.get("/channel/profile", verifyJWT, getUserChannleProfile); // get user channel profile route
+router.get("/channel/:username", verifyJWT, getUserChannleProfile); // get user channel profile route
 
 router.get("/watch-history", verifyJWT, getWatchHistory); // get watch history route
 
