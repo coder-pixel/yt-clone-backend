@@ -33,8 +33,8 @@ router.post(
 // route to get all the videos
 router.get("/", getAllVideos);
 
-// route to get all videos of the logged in user
-router.get("/my-videos", verifyJWT, getAllUserVideos);
+// // route to get all videos of the logged in user -- moved to user routes
+// router.get("/my-videos", verifyJWT, getAllUserVideos);
 
 // route to get a video by id
 router.get("/:videoId", getVideoById);

@@ -14,6 +14,7 @@ import {
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
+import { getAllUserVideos } from "../controllers/video.controller.js";
 
 const router = Router();
 
@@ -62,5 +63,8 @@ router.patch(
 router.get("/channel/:username", verifyJWT, getUserChannleProfile); // get user channel profile route
 
 router.get("/watch-history", verifyJWT, getWatchHistory); // get watch history route
+
+// route to get all videos uploaded by a user
+router.get("/:userId/videos", verifyJWT, getAllUserVideos);
 
 export default router;
