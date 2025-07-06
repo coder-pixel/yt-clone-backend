@@ -5,6 +5,7 @@ import {
   getAllVideos,
   getVideoById,
   updateVideoById,
+  deleteVideoById,
 } from "../controllers/video.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -53,5 +54,8 @@ router.patch(
   ]),
   updateVideoById
 );
+
+// route to delete a video by id
+router.delete("/:videoId", verifyJWT, deleteVideoById);
 
 export default router;
