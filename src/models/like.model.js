@@ -21,10 +21,10 @@ const likeSchema = new mongoose.Schema(
     },
     likedOn: {
       type: mongoose.Schema.Types.ObjectId,
-      refPath: "likedOnType",
+      refPath: "onModel",
       required: true,
     },
-    likedOnType: {
+    onModel: {
       type: String,
       enum: ["Tweet", "Comment", "Video"],
       required: true,
