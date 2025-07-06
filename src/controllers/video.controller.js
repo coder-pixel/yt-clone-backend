@@ -74,10 +74,11 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
 // resposible for fetching all the videos created by the logged in user
 const getAllUserVideos = asyncHandler(async (req, res) => {
-  const { user } = req;
+  // const { user } = req;
+  const { userId } = req?.params;
 
   // need to fetch all the videos created by the user -> owner: user?._id
-  const videos = await Video.find({ owner: user?._id });
+  const videos = await Video.find({ owner: userId });
 
   return res
     .status(200)

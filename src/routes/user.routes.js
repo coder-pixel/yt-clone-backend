@@ -15,7 +15,7 @@ import {
 import { upload } from "../middlewares/multer.middleware.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { getAllUserVideos } from "../controllers/video.controller.js";
-
+import { getAllTweetsForAUser } from "../controllers/tweet.controller.js";
 const router = Router();
 
 router.post(
@@ -66,5 +66,8 @@ router.get("/watch-history", verifyJWT, getWatchHistory); // get watch history r
 
 // route to get all videos uploaded by a user
 router.get("/:userId/videos", verifyJWT, getAllUserVideos);
+
+// route to get all tweets for a user
+router.get("/:userId/tweets", verifyJWT, getAllTweetsForAUser);
 
 export default router;

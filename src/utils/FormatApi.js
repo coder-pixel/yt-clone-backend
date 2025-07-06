@@ -11,6 +11,11 @@ class FormatApi {
   }
 
   filter() {
+    if (!this.filters) {
+      this.query = this.query.find({}); // if no filters, return fn to get all tweets
+      return this;
+    }
+
     const queryObj = { ...this.filters };
     const excludeFields = ["page", "limit", "sort", "fields"];
     excludeFields.forEach((el) => delete queryObj[el]);
