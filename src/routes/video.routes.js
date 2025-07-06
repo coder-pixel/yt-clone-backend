@@ -3,6 +3,7 @@ import {
   publishAVideo,
   getAllUserVideos,
   getAllVideos,
+  getVideoById,
 } from "../controllers/video.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -31,5 +32,8 @@ router.get("/", getAllVideos);
 
 // route to get all videos of the logged in user
 router.get("/my-videos", verifyJWT, getAllUserVideos);
+
+// route to get a video by id
+router.get("/:videoId", getVideoById);
 
 export default router;

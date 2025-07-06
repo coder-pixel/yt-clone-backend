@@ -63,7 +63,13 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, videos, "Videos fetched successfully"));
+    .json(
+      new ApiResponse(
+        200,
+        { videos, totalVideos: videos?.length },
+        "Videos fetched successfully"
+      )
+    );
 });
 
 // resposible for fetching all the videos created by the logged in user
@@ -84,4 +90,24 @@ const getAllUserVideos = asyncHandler(async (req, res) => {
     );
 });
 
-export { publishAVideo, getAllVideos, getAllUserVideos };
+const getVideoById = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+
+  if (!videoId) {
+    throw new ApiError(400, "Video ID is required");
+  }
+
+  const video = await Video.findById(videoId)
+    .populate("owner", "fullName email username avatar") // populate the owner field with the name and email of the user
+    .exec(); // execute the query
+
+  if (!video) {
+    throw new ApiError(404, "Video not found");
+  }
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Video fetched successfully"));
+});
+
+export { publishAVideo, getAllVideos, getAllUserVideos, getVideoById };
