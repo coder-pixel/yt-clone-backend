@@ -6,6 +6,7 @@ import {
   getVideoById,
   updateVideoById,
   deleteVideoById,
+  updatePublishedStatus,
 } from "../controllers/video.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
@@ -54,6 +55,9 @@ router.patch(
   ]),
   updateVideoById
 );
+
+// route to update the published status of a video by id
+router.patch("/:videoId/publish", verifyJWT, updatePublishedStatus);
 
 // route to delete a video by id
 router.delete("/:videoId", verifyJWT, deleteVideoById);

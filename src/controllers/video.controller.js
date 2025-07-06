@@ -229,6 +229,27 @@ const deleteVideoById = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, null, "Video deleted successfully"));
 });
 
+const updatePublishedStatus = asyncHandler(async (req, res) => {
+  const { videoId } = req.params;
+  const { isPublished } = req.body;
+
+  if (!videoId) {
+    throw new ApiError(400, "Video ID is required");
+  }
+
+  if (isPublished === undefined) {
+    throw new ApiError(400, "Published status is required");
+  }
+
+  const video = await Video.findByIdAndUpdate(videoId, {
+    isPublished: isPublished === "true",
+  });
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, video, "Published status updated successfully"));
+});
+
 export {
   publishAVideo,
   getAllVideos,
@@ -236,4 +257,5 @@ export {
   getVideoById,
   updateVideoById,
   deleteVideoById,
+  updatePublishedStatus,
 };
