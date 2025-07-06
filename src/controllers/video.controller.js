@@ -33,11 +33,6 @@ export const publishAVideo = asyncHandler(async (req, res) => {
     console.log({ thumbnail });
   }
 
-  return res
-    .status(200)
-    .json(
-      new ApiResponse(200, { thumbnail }, "Thumbnail generated successfully")
-    );
   const videoFile = videoResponse?.url;
   const duration = videoResponse?.duration;
 
