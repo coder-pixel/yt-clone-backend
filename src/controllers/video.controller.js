@@ -6,7 +6,7 @@ import { ApiError } from "../utils/APIError.js";
 import { Video } from "../models/video.model.js";
 import { ApiResponse } from "../utils/APIResponse.js";
 
-export const publishAVideo = asyncHandler(async (req, res) => {
+const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
 
   const videoLocalFilePath = req?.files?.video?.[0]?.path;
@@ -54,3 +54,34 @@ export const publishAVideo = asyncHandler(async (req, res) => {
     .status(200)
     .json(new ApiResponse(200, video, "Video published successfully"));
 });
+
+// responsible for fetching all the videos
+const getAllVideos = asyncHandler(async (req, res) => {
+  const videos = await Video.find({}) // fetch all the videos
+    .populate("owner", "fullName email username avatar") // populate the owner field with the name and email of the user
+    .exec(); // execute the query
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, videos, "Videos fetched successfully"));
+});
+
+// resposible for fetching all the videos created by the logged in user
+const getAllUserVideos = asyncHandler(async (req, res) => {
+  const { user } = req;
+
+  // need to fetch all the videos created by the user -> owner: user?._id
+  const videos = await Video.find({ owner: user?._id });
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        { videos, totalVideos: videos?.length },
+        "Videos fetched successfully"
+      )
+    );
+});
+
+export { publishAVideo, getAllVideos, getAllUserVideos };

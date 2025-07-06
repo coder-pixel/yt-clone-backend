@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   publishAVideo,
+  getAllUserVideos,
   getAllVideos,
 } from "../controllers/video.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -25,7 +26,10 @@ router.post(
   publishAVideo
 );
 
-// route to get all videos
+// route to get all the videos
 router.get("/", getAllVideos);
+
+// route to get all videos of the logged in user
+router.get("/my-videos", verifyJWT, getAllUserVideos);
 
 export default router;
