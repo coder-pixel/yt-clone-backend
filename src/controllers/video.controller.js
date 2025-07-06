@@ -1,9 +1,10 @@
+import { v2 as cloudinary } from "cloudinary";
+
 import asyncHandler from "../utils/asyncHandler.js";
-import { uploadOnCloudinary } from "../utils/cloudinary.js";
+import { generateThumbnail, uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiError } from "../utils/APIError.js";
 import { Video } from "../models/video.model.js";
 import { ApiResponse } from "../utils/APIResponse.js";
-export const getAllVideos = asyncHandler(async (req, res) => {});
 
 export const publishAVideo = asyncHandler(async (req, res) => {
   const { title, description } = req.body;
@@ -11,12 +12,7 @@ export const publishAVideo = asyncHandler(async (req, res) => {
   const videoLocalFilePath = req?.files?.video?.[0]?.path;
   const thumbnailLocalFilePath = req?.files?.thumbnail?.[0]?.path;
 
-  if (
-    !title ||
-    !description ||
-    !videoLocalFilePath ||
-    !thumbnailLocalFilePath
-  ) {
+  if (!title || !description || !videoLocalFilePath) {
     throw new ApiError(400, "All fields are required");
   }
 
@@ -26,12 +22,24 @@ export const publishAVideo = asyncHandler(async (req, res) => {
 
   // upload the video and thumbnail to cloudinary
   const videoResponse = await uploadOnCloudinary(videoLocalFilePath);
-  const thumbnailResponse = await uploadOnCloudinary(thumbnailLocalFilePath);
 
+  let thumbnail = null;
+  if (thumbnailLocalFilePath) {
+    const thumbnailResponse = await uploadOnCloudinary(thumbnailLocalFilePath);
+    thumbnail = thumbnailResponse?.url;
+  } else {
+    // generate a thumbnail
+    thumbnail = await generateThumbnail(videoResponse?.public_id);
+    console.log({ thumbnail });
+  }
+
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, { thumbnail }, "Thumbnail generated successfully")
+    );
   const videoFile = videoResponse?.url;
   const duration = videoResponse?.duration;
-
-  const thumbnail = thumbnailResponse?.url;
 
   // create the video document
   const videoDoc = {

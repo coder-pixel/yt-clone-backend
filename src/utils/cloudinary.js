@@ -36,4 +36,34 @@ const uploadOnCloudinary = async (localFilePath) => {
   }
 };
 
-export { uploadOnCloudinary };
+// This will generate a thumbnail at 3s and store it as a JPEG image.
+const generateThumbnail = async (videoFilePath) => {
+  try {
+    if (!videoFilePath) return null;
+
+    // generate the thumbnail
+    const response = await cloudinary.uploader.explicit(videoFilePath, {
+      type: "upload",
+      resource_type: "video",
+      // eager is used to generate the thumbnail at 3s and store it as a JPEG image.
+      eager: [
+        {
+          width: 300,
+          height: 170,
+          gravity: "auto",
+          crop: "fill",
+          start_offset: "3", // Optional: capture at 3s into the video
+          format: "jpg", // Optional: specify the format as jpg
+        },
+      ],
+    });
+
+    // return the url of the thumbnail
+    return response?.eager?.[0]?.url;
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(500, "Failed to generate thumbnail");
+  }
+};
+
+export { uploadOnCloudinary, generateThumbnail };
